@@ -374,7 +374,7 @@
   function maybeGenerateDeadEndBranch(forkIndex) {
     if (forkIndex < nextDeadEndAllowedIndex) return;
 
-    const forkChance = Math.min(0.68, 0.52 + forkIndex * 0.002);
+    const forkChance = Math.min(0.78, 0.62 + forkIndex * 0.002);
     if (Math.random() >= forkChance) return;
 
     const forkOrigin = platforms.find((p) => p.index === forkIndex - 1 && !p.isDeadEnd);
@@ -386,17 +386,16 @@
     const firstTrapCol = forkOrigin.col + trapDir;
     if (firstTrapCol < 0 || firstTrapCol >= NUM_COLS) return;
 
-    const desiredLen = Math.random() < 0.65 ? 1 : (Math.random() < 0.7 ? 2 : 3);
+    // Build up to 3 candidate steps for the trap branch
     const candidates = [{ index: forkIndex, col: firstTrapCol }];
-
-    for (let s = 1; s < desiredLen; s++) {
+    for (let s = 1; s < 3; s++) {
       const idx = forkIndex + s;
       const mainP = platforms.find((p) => p.index === idx && !p.isDeadEnd);
       if (!mainP) break;
 
       const prevCol = candidates[candidates.length - 1].col;
       const dirs = Math.random() < 0.5 ? [-1, 1] : [1, -1];
-      // Prefer moving away from the main path so the dead-end branch looks distinct
+      // Prefer moving away from the main path so the dead-end branch stays separate
       dirs.sort((a, b) => Math.abs(prevCol + b - mainP.col) - Math.abs(prevCol + a - mainP.col));
 
       let chosenCol = null;
@@ -411,19 +410,28 @@
       candidates.push({ index: idx, col: chosenCol });
     }
 
-    // Ensure the last platform of the branch is a true dead end (cannot jump back to main path)
-    while (candidates.length > 0) {
-      const endStep = candidates[candidates.length - 1];
+    // Collect all lengths (1..candidates.length) that are true dead ends
+    const validLengths = [];
+    for (let len = 1; len <= candidates.length; len++) {
+      const endStep = candidates[len - 1];
       const mainAfterEnd = platforms.find((p) => p.index === endStep.index + 1 && !p.isDeadEnd);
       if (mainAfterEnd && Math.abs(endStep.col - mainAfterEnd.col) !== 1) {
-        break;
+        validLengths.push(len);
       }
-      candidates.pop();
     }
 
-    if (candidates.length === 0) return;
+    if (validLengths.length === 0) return;
 
-    for (const step of candidates) {
+    // Prefer 1-platform dead ends (classic left/right trap) when available, otherwise pick randomly
+    let chosenLen;
+    if (validLengths.includes(1) && Math.random() < 0.65) {
+      chosenLen = 1;
+    } else {
+      chosenLen = validLengths[Math.floor(Math.random() * validLengths.length)];
+    }
+
+    const branch = candidates.slice(0, chosenLen);
+    for (const step of branch) {
       platforms.push({
         index: step.index,
         col: step.col,
@@ -441,7 +449,7 @@
       });
     }
 
-    nextDeadEndAllowedIndex = forkIndex + candidates.length + 1;
+    nextDeadEndAllowedIndex = forkIndex + branch.length + 1;
   }
 
   function resetGame() {
