@@ -13,6 +13,7 @@
 
   const STORAGE_KEYS = {
     RECORD: 'frogjump_record_v1',
+    BEST_TIME: 'frogjump_best_time_v1',
     COINS: 'frogjump_coins_v1',
     UNLOCKED: 'frogjump_unlocked_skins_v1',
     EQUIPPED: 'frogjump_equipped_skin_v1',
@@ -49,6 +50,7 @@
   let ctx = canvas.getContext('2d');
 
   const scoreValueEl = document.getElementById('scoreValue');
+  const timeValueEl = document.getElementById('timeValue');
   const recordValueEl = document.getElementById('recordValue');
   const coinsValueEl = document.getElementById('coinsValue');
   const shopCoinsValueEl = document.getElementById('shopCoinsValue');
@@ -59,6 +61,8 @@
 
   const finalScoreEl = document.getElementById('finalScore');
   const finalRecordEl = document.getElementById('finalRecord');
+  const finalTimeEl = document.getElementById('finalTime');
+  const finalBestTimeEl = document.getElementById('finalBestTime');
   const runCoinsEl = document.getElementById('runCoins');
   const newRecordBadge = document.getElementById('newRecordBadge');
   const startFrogPreview = document.getElementById('startFrogPreview');
@@ -76,6 +80,7 @@
   const musicBtn = document.getElementById('musicBtn');
   const menuMusicBtn = document.getElementById('menuMusicBtn');
   const menuRecordValueEl = document.getElementById('menuRecordValue');
+  const menuBestTimeValueEl = document.getElementById('menuBestTimeValue');
   const menuCoinsValueEl = document.getElementById('menuCoinsValue');
   const soundBtn = document.getElementById('soundBtn');
   const leftBtn = document.getElementById('leftBtn');
@@ -206,6 +211,7 @@
 
   // --- Persistent State ---
   let record = parseInt(localStorage.getItem(STORAGE_KEYS.RECORD) || '0', 10);
+  let bestTime = parseFloat(localStorage.getItem(STORAGE_KEYS.BEST_TIME) || '0') || 0;
   let coins = parseInt(localStorage.getItem(STORAGE_KEYS.COINS) || '0', 10);
   let unlockedSkins = JSON.parse(localStorage.getItem(STORAGE_KEYS.UNLOCKED) || '["green"]');
   if (!Array.isArray(unlockedSkins) || !unlockedSkins.includes('green')) {
@@ -224,6 +230,7 @@
 
   function saveProgress() {
     localStorage.setItem(STORAGE_KEYS.RECORD, String(record));
+    localStorage.setItem(STORAGE_KEYS.BEST_TIME, bestTime.toFixed(1));
     localStorage.setItem(STORAGE_KEYS.COINS, String(coins));
     localStorage.setItem(STORAGE_KEYS.UNLOCKED, JSON.stringify(unlockedSkins));
     localStorage.setItem(STORAGE_KEYS.EQUIPPED, equippedSkinId);
@@ -243,8 +250,20 @@
   let gameState = 'start'; // 'start' | 'playing' | 'gameover'
   let shopReturnState = 'start';
   let score = 0;
+  let runTime = 0;
+  let lastDisplayedTime = '';
   let runCoins = 0;
   let beatRecordThisRun = false;
+  let beatTimeRecordThisRun = false;
+
+  function formatTime(sec) {
+    if (sec < 60) {
+      return `${sec.toFixed(1)}s`;
+    }
+    const mins = Math.floor(sec / 60);
+    const rem = (sec % 60).toFixed(1).padStart(4, '0');
+    return `${mins}:${rem}`;
+  }
 
   const BIOMES = [
     { minScore: 0, icon: '🌿', label: 'Jardim da Lagoa', top: [96, 195, 245], bottom: [34, 150, 92], platform: 'lily' },
@@ -427,8 +446,11 @@
 
   function resetGame() {
     score = 0;
+    runTime = 0;
+    lastDisplayedTime = '';
     runCoins = 0;
     beatRecordThisRun = false;
+    beatTimeRecordThisRun = false;
     currentBiomeIndex = 0;
     biomeBanner = { text: `${BIOMES[0].icon} ${BIOMES[0].label}`, life: 1.8, maxLife: 1.8 };
     platformTimer = 0;
@@ -599,14 +621,29 @@
 
   function triggerGameOver() {
     gameState = 'gameover';
+    if (runTime > bestTime) {
+      bestTime = runTime;
+      beatTimeRecordThisRun = true;
+    }
     saveProgress();
     updateHUD();
 
     finalScoreEl.textContent = String(score);
     finalRecordEl.textContent = String(record);
+    finalTimeEl.textContent = formatTime(runTime);
+    finalBestTimeEl.textContent = formatTime(bestTime);
     runCoinsEl.textContent = `+${runCoins} 🪙`;
 
-    if (beatRecordThisRun && score > 0) {
+    const hasScoreRecord = beatRecordThisRun && score > 0;
+    const hasTimeRecord = beatTimeRecordThisRun && runTime >= 0.5;
+    if (hasScoreRecord && hasTimeRecord) {
+      newRecordBadge.textContent = '🏆 NOVO RECORDE DE SUBIDA E TEMPO!';
+      newRecordBadge.classList.remove('hidden');
+    } else if (hasScoreRecord) {
+      newRecordBadge.textContent = '🏆 NOVO RECORDE DE SUBIDA!';
+      newRecordBadge.classList.remove('hidden');
+    } else if (hasTimeRecord) {
+      newRecordBadge.textContent = '⏱️ NOVO RECORDE DE TEMPO!';
       newRecordBadge.classList.remove('hidden');
     } else {
       newRecordBadge.classList.add('hidden');
@@ -653,6 +690,19 @@
   // --- Update Loop ---
   function update(dt) {
     globalTime += dt;
+
+    if (gameState === 'playing' && !frog.falling) {
+      runTime += dt;
+      if (runTime > bestTime) {
+        bestTime = runTime;
+        beatTimeRecordThisRun = true;
+      }
+      const formatted = formatTime(runTime);
+      if (formatted !== lastDisplayedTime) {
+        lastDisplayedTime = formatted;
+        timeValueEl.textContent = formatted;
+      }
+    }
 
     // Smooth camera pan
     cameraY += (targetCameraY - cameraY) * Math.min(1, dt * 12);
@@ -1773,10 +1823,14 @@
   // --- UI & Shop ---
   function updateHUD() {
     scoreValueEl.textContent = String(score);
+    const formatted = formatTime(runTime);
+    lastDisplayedTime = formatted;
+    timeValueEl.textContent = formatted;
     recordValueEl.textContent = String(record);
     coinsValueEl.textContent = String(coins);
     shopCoinsValueEl.textContent = String(coins);
     menuRecordValueEl.textContent = String(record);
+    menuBestTimeValueEl.textContent = formatTime(bestTime);
     menuCoinsValueEl.textContent = String(coins);
     soundBtn.textContent = audio.muted ? '🔇' : '🔊';
     musicBtn.textContent = audio.musicEnabled ? '🎵' : '🎶';
