@@ -272,7 +272,7 @@
   let platforms = [];
   let lastMainPlatform = null;
   let highestPlatformIndex = 0;
-  let nextDeadEndAllowedIndex = 6;
+  let nextDeadEndAllowedIndex = 2;
   let particles = [];
   let floatingTexts = [];
   let cameraY = 0;
@@ -328,7 +328,7 @@
 
     const nextCol = prev.col + dir;
     const hasCoin = nextIndex >= 2 && Math.random() < 0.36;
-    const isFast = nextIndex >= 35 && Math.random() < Math.min(0.34, 0.15 + (nextIndex - 35) * 0.0015);
+    const isFast = nextIndex >= 12 && Math.random() < Math.min(0.42, 0.18 + (nextIndex - 12) * 0.002);
 
     const newPlatform = {
       index: nextIndex,
@@ -355,7 +355,7 @@
   function maybeGenerateDeadEndBranch(forkIndex) {
     if (forkIndex < nextDeadEndAllowedIndex) return;
 
-    const forkChance = Math.min(0.45, 0.24 + forkIndex * 0.0025);
+    const forkChance = Math.min(0.68, 0.52 + forkIndex * 0.002);
     if (Math.random() >= forkChance) return;
 
     const forkOrigin = platforms.find((p) => p.index === forkIndex - 1 && !p.isDeadEnd);
@@ -367,7 +367,7 @@
     const firstTrapCol = forkOrigin.col + trapDir;
     if (firstTrapCol < 0 || firstTrapCol >= NUM_COLS) return;
 
-    const desiredLen = Math.random() < 0.35 ? 1 : (Math.random() < 0.65 ? 2 : 3);
+    const desiredLen = Math.random() < 0.65 ? 1 : (Math.random() < 0.7 ? 2 : 3);
     const candidates = [{ index: forkIndex, col: firstTrapCol }];
 
     for (let s = 1; s < desiredLen; s++) {
@@ -422,7 +422,7 @@
       });
     }
 
-    nextDeadEndAllowedIndex = forkIndex + candidates.length + 2;
+    nextDeadEndAllowedIndex = forkIndex + candidates.length + 1;
   }
 
   function resetGame() {
@@ -454,7 +454,7 @@
     platforms.push(startPlatform);
     lastMainPlatform = startPlatform;
     highestPlatformIndex = 0;
-    nextDeadEndAllowedIndex = 6;
+    nextDeadEndAllowedIndex = 2;
 
     for (let i = 0; i < 16; i++) {
       generateNextPlatform();
@@ -577,9 +577,9 @@
         platforms = platforms.filter((p) => !p.removed && p.index >= score - 4);
       }
 
-      if (score >= 25 || (landedPlatform && landedPlatform.fast)) {
-        const baseTime = score >= 25 ? Math.max(0.62, 1.85 - (score - 25) * 0.0065) : 1.5;
-        platformMaxTimer = landedPlatform && landedPlatform.fast ? Math.max(0.48, baseTime * 0.58) : baseTime;
+      if (score >= 1 || (landedPlatform && landedPlatform.fast)) {
+        const baseTime = Math.max(0.45, 1.35 - score * 0.011);
+        platformMaxTimer = landedPlatform && landedPlatform.fast ? Math.max(0.36, baseTime * 0.55) : baseTime;
         platformTimer = platformMaxTimer;
       }
 
@@ -660,7 +660,7 @@
     // Update vanishing platforms
     for (const p of platforms) {
       if (p.vanishing && !p.removed) {
-        p.vanishProgress += dt * 4.5;
+        p.vanishProgress += dt * 5.5;
         if (p.vanishProgress >= 1) {
           p.vanishProgress = 1;
           p.removed = true;
