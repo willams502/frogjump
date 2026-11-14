@@ -1,6 +1,6 @@
 {
-  "appId": "com.willams502.frogjump",
-  "appName": "Frog Jump",
+  "appId": "com.willams502.brejohop",
+  "appName": "BrejoHop",
   "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
