@@ -1,4 +1,4 @@
-const CACHE_NAME = 'frogjump-v1';
+const CACHE_NAME = 'frogjump-v2';
 const ASSETS = [
   './',
   './index.html',
