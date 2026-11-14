@@ -1,7 +1,7 @@
 {
-  "name": "frogjump",
+  "name": "brejohop",
   "version": "1.0.0",
-  "description": "Sapo Pula-Pula (Frog Jump) - Jogo de plataformas infinitas",
+  "description": "BrejoHop - Jogo de plataformas infinitas",
   "scripts": {
     "build": "node -e \"const fs=require('fs');fs.mkdirSync('www',{recursive:true});for(const f of ['index.html','style.css','game.js','manifest.json','sw.js','icon-192.png','icon-512.png','apple-touch-icon.png','privacy.html']){if(fs.existsSync(f))fs.copyFileSync(f,'www/'+f);}\"",
     "cap:sync": "npm run build && npx cap sync"
