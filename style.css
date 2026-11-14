@@ -44,11 +44,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   background: rgba(15, 38, 46, 0.85);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 8px 12px;
+  padding: 8px 10px;
   backdrop-filter: blur(8px);
 }
 
@@ -56,29 +56,34 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 62px;
+  min-width: 46px;
 }
 
 .hud-stat.coins {
   flex-direction: row;
-  gap: 5px;
+  gap: 4px;
   background: rgba(251, 191, 36, 0.14);
   border: 1px solid rgba(251, 191, 36, 0.35);
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
 }
 
 .hud-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--muted);
 }
 
 .hud-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-stat.time .hud-value {
+  color: #38bdf8;
 }
 
 .hud-stat.record .hud-value {
@@ -87,22 +92,22 @@ body {
 
 .hud-stat.coins .hud-value {
   color: var(--gold);
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .hud-actions {
   display: flex;
-  gap: 6px;
+  gap: 5px;
 }
 
 .icon-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.08);
   color: var(--text);
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
   transition: transform 0.1s ease, background 0.15s ease;
 }
@@ -327,8 +332,12 @@ kbd {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
+}
+
+.summary-box.span-2 {
+  grid-column: span 2;
 }
 
 .summary-box {
