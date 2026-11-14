@@ -21,6 +21,10 @@
         <span class="hud-label">SUBIDA</span>
         <span id="scoreValue" class="hud-value">0</span>
       </div>
+      <div class="hud-stat time" title="Tempo desta partida">
+        <span class="hud-label">TEMPO</span>
+        <span id="timeValue" class="hud-value">0.0s</span>
+      </div>
       <div class="hud-stat record" title="Seu recorde de plataformas">
         <span class="hud-label">RECORDE</span>
         <span id="recordValue" class="hud-value">0</span>
@@ -48,6 +52,7 @@
           <h1>Sapo Pula-Pula</h1>
           <div class="menu-stats">
             <div class="menu-stat-pill">🏆 Recorde: <strong id="menuRecordValue">0</strong></div>
+            <div class="menu-stat-pill">⏱️ Tempo: <strong id="menuBestTimeValue">0.0s</strong></div>
             <div class="menu-stat-pill">🪙 Moedas: <strong id="menuCoinsValue">0</strong></div>
           </div>
           <p class="subtitle">
@@ -81,6 +86,14 @@
               <span id="finalRecord" class="summary-num">0</span>
             </div>
             <div class="summary-box">
+              <span class="summary-label">Tempo</span>
+              <span id="finalTime" class="summary-num">0.0s</span>
+            </div>
+            <div class="summary-box">
+              <span class="summary-label">Melhor Tempo</span>
+              <span id="finalBestTime" class="summary-num">0.0s</span>
+            </div>
+            <div class="summary-box span-2">
               <span class="summary-label">Moedas ganhas</span>
               <span id="runCoins" class="summary-num">+0 🪙</span>
             </div>
