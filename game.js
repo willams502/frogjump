@@ -270,7 +270,9 @@
   let platformMaxTimer = 0;
 
   let platforms = [];
+  let lastMainPlatform = null;
   let highestPlatformIndex = 0;
+  let nextDeadEndAllowedIndex = 6;
   let particles = [];
   let floatingTexts = [];
   let cameraY = 0;
@@ -309,7 +311,7 @@
 
   // --- Platform Generation ---
   function generateNextPlatform() {
-    const prev = platforms[platforms.length - 1];
+    const prev = lastMainPlatform;
     const nextIndex = prev.index + 1;
     let dir;
     if (prev.col <= 0) {
@@ -328,7 +330,7 @@
     const hasCoin = nextIndex >= 2 && Math.random() < 0.36;
     const isFast = nextIndex >= 35 && Math.random() < Math.min(0.34, 0.15 + (nextIndex - 35) * 0.0015);
 
-    platforms.push({
+    const newPlatform = {
       index: nextIndex,
       col: nextCol,
       dir,
@@ -337,12 +339,90 @@
       hasCoin,
       coinCollected: false,
       fast: isFast,
+      isDeadEnd: false,
       vanishing: false,
       vanishProgress: 0,
       removed: false,
       bobOffset: Math.random() * Math.PI * 2,
-    });
+    };
+    platforms.push(newPlatform);
+    lastMainPlatform = newPlatform;
     highestPlatformIndex = nextIndex;
+
+    maybeGenerateDeadEndBranch(nextIndex - 4);
+  }
+
+  function maybeGenerateDeadEndBranch(forkIndex) {
+    if (forkIndex < nextDeadEndAllowedIndex) return;
+
+    const forkChance = Math.min(0.45, 0.24 + forkIndex * 0.0025);
+    if (Math.random() >= forkChance) return;
+
+    const forkOrigin = platforms.find((p) => p.index === forkIndex - 1 && !p.isDeadEnd);
+    const mainAtFork = platforms.find((p) => p.index === forkIndex && !p.isDeadEnd);
+    if (!forkOrigin || !mainAtFork) return;
+
+    const mainDir = mainAtFork.col - forkOrigin.col;
+    const trapDir = -mainDir;
+    const firstTrapCol = forkOrigin.col + trapDir;
+    if (firstTrapCol < 0 || firstTrapCol >= NUM_COLS) return;
+
+    const desiredLen = Math.random() < 0.35 ? 1 : (Math.random() < 0.65 ? 2 : 3);
+    const candidates = [{ index: forkIndex, col: firstTrapCol }];
+
+    for (let s = 1; s < desiredLen; s++) {
+      const idx = forkIndex + s;
+      const mainP = platforms.find((p) => p.index === idx && !p.isDeadEnd);
+      if (!mainP) break;
+
+      const prevCol = candidates[candidates.length - 1].col;
+      const dirs = Math.random() < 0.5 ? [-1, 1] : [1, -1];
+      // Prefer moving away from the main path so the dead-end branch looks distinct
+      dirs.sort((a, b) => Math.abs(prevCol + b - mainP.col) - Math.abs(prevCol + a - mainP.col));
+
+      let chosenCol = null;
+      for (const d of dirs) {
+        const c = prevCol + d;
+        if (c >= 0 && c < NUM_COLS && c !== mainP.col) {
+          chosenCol = c;
+          break;
+        }
+      }
+      if (chosenCol === null) break;
+      candidates.push({ index: idx, col: chosenCol });
+    }
+
+    // Ensure the last platform of the branch is a true dead end (cannot jump back to main path)
+    while (candidates.length > 0) {
+      const endStep = candidates[candidates.length - 1];
+      const mainAfterEnd = platforms.find((p) => p.index === endStep.index + 1 && !p.isDeadEnd);
+      if (mainAfterEnd && Math.abs(endStep.col - mainAfterEnd.col) !== 1) {
+        break;
+      }
+      candidates.pop();
+    }
+
+    if (candidates.length === 0) return;
+
+    for (const step of candidates) {
+      platforms.push({
+        index: step.index,
+        col: step.col,
+        dir: 0,
+        x: colToX(step.col),
+        y: indexToY(step.index),
+        hasCoin: Math.random() < 0.35,
+        coinCollected: false,
+        fast: false,
+        isDeadEnd: true,
+        vanishing: false,
+        vanishProgress: 0,
+        removed: false,
+        bobOffset: Math.random() * Math.PI * 2,
+      });
+    }
+
+    nextDeadEndAllowedIndex = forkIndex + candidates.length + 2;
   }
 
   function resetGame() {
@@ -358,21 +438,25 @@
     floatingTexts = [];
 
     // Base starting platform
-    platforms.push({
+    const startPlatform = {
       index: 0,
       col: 2,
       x: colToX(2),
       y: 0,
       hasCoin: false,
       coinCollected: false,
+      isDeadEnd: false,
       vanishing: false,
       vanishProgress: 0,
       removed: false,
       bobOffset: 0,
-    });
+    };
+    platforms.push(startPlatform);
+    lastMainPlatform = startPlatform;
     highestPlatformIndex = 0;
+    nextDeadEndAllowedIndex = 6;
 
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 16; i++) {
       generateNextPlatform();
     }
 
@@ -412,7 +496,7 @@
     platformTimer = 0;
     platformMaxTimer = 0;
     const currentIndex = score;
-    const currentPlatform = platforms.find((p) => p.index === currentIndex);
+    const currentPlatform = platforms.find((p) => p.index === currentIndex && p.col === frog.col);
 
     // Current platform immediately starts disappearing!
     if (currentPlatform && !currentPlatform.vanishing) {
@@ -421,9 +505,9 @@
     }
 
     const nextIndex = currentIndex + 1;
-    const nextPlatform = platforms.find((p) => p.index === nextIndex);
     const targetCol = frog.col + dir;
-    const willLand = Boolean(nextPlatform && nextPlatform.col === targetCol);
+    const nextPlatform = platforms.find((p) => p.index === nextIndex && p.col === targetCol);
+    const willLand = Boolean(nextPlatform);
 
     frog.facing = dir;
     frog.jumping = true;
@@ -463,7 +547,7 @@
         biomeBanner = { text: `${b.icon} ${b.label}`, life: 2.3, maxLife: 2.3 };
       }
 
-      const landedPlatform = platforms.find((p) => p.index === score);
+      const landedPlatform = platforms.find((p) => p.index === score && p.col === frog.col);
       if (landedPlatform && landedPlatform.hasCoin && !landedPlatform.coinCollected) {
         landedPlatform.coinCollected = true;
         coins += 1;
@@ -611,7 +695,7 @@
       if (platformTimer <= 0) {
         platformTimer = 0;
         platformMaxTimer = 0;
-        const currentPlatform = platforms.find((p) => p.index === score);
+        const currentPlatform = platforms.find((p) => p.index === score && p.col === frog.col);
         if (currentPlatform && !currentPlatform.vanishing) {
           currentPlatform.vanishing = true;
           spawnVanishParticles(currentPlatform.x, currentPlatform.y + 10);
@@ -1047,7 +1131,7 @@
     const scale = p.vanishing ? 1 - p.vanishProgress * 0.65 : 1;
     const alpha = p.vanishing ? 1 - p.vanishProgress : 1;
     const bob = p.vanishing ? p.vanishProgress * 14 : Math.sin(globalTime * 3 + p.bobOffset) * 2;
-    const isCurrent = p.index === score && !frog.jumping && !frog.falling;
+    const isCurrent = p.index === score && p.col === frog.col && !frog.jumping && !frog.falling;
     const theme = BIOMES[getBiomeIndex(p.index)].platform;
     const timerRatio = isCurrent && platformMaxTimer > 0 ? Math.max(0, platformTimer / platformMaxTimer) : 1;
     const shakeX = isCurrent && platformMaxTimer > 0 && timerRatio < 0.38 ? Math.sin(globalTime * 55) * 2.5 : 0;
