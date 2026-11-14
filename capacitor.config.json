@@ -1,0 +1,9 @@
+{
+  "appId": "com.willams502.frogjump",
+  "appName": "Frog Jump",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
