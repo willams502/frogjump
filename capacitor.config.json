@@ -1,0 +1,9 @@
+{
+  "appId": "com.willams502.brejohop",
+  "appName": "BrejoHop",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

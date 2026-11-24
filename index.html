@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b2027" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BrejoHop" />
+  <title>BrejoHop — Salto Infinito</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="game-shell">
+    <!-- Top HUD -->
+    <header class="hud">
+      <div class="hud-stat" title="Plataformas subidas nesta partida">
+        <span class="hud-label">SUBIDA</span>
+        <span id="scoreValue" class="hud-value">0</span>
+      </div>
+      <div class="hud-stat time" title="Tempo desta partida">
+        <span class="hud-label">TEMPO</span>
+        <span id="timeValue" class="hud-value">0.0s</span>
+      </div>
+      <div class="hud-stat record" title="Seu recorde de plataformas">
+        <span class="hud-label">RECORDE</span>
+        <span id="recordValue" class="hud-value">0</span>
+      </div>
+      <div class="hud-stat coins" title="Moedas coletadas">
+        <span class="coin-icon">🪙</span>
+        <span id="coinsValue" class="hud-value">0</span>
+      </div>
+      <div class="hud-actions">
+        <button id="shopBtn" class="icon-btn" title="Cores do Sapo" aria-label="Abrir loja de cores">🎨</button>
+        <button id="musicBtn" class="icon-btn" title="Alternar música tema" aria-label="Alternar música tema">🎵</button>
+        <button id="soundBtn" class="icon-btn" title="Alternar efeitos sonoros" aria-label="Alternar efeitos sonoros">🔊</button>
+      </div>
+    </header>
+
+    <!-- Main Canvas Container -->
+    <main class="canvas-wrapper">
+      <canvas id="gameCanvas" width="420" height="680"></canvas>
+
+      <!-- Start Screen Overlay -->
+      <div id="startOverlay" class="overlay">
+        <div class="card menu-card">
+          <div class="journey-pill">🌿 Jardim ➔ ☁️ Nuvens ➔ 🚀 Espaço</div>
+          <div class="frog-preview-badge" id="startFrogPreview"></div>
+          <h1>BrejoHop</h1>
+          <div class="menu-stats">
+            <div class="menu-stat-pill">🏆 Recorde: <strong id="menuRecordValue">0</strong></div>
+            <div class="menu-stat-pill">⏱️ Tempo: <strong id="menuBestTimeValue">0.0s</strong></div>
+            <div class="menu-stat-pill">🪙 Moedas: <strong id="menuCoinsValue">0</strong></div>
+          </div>
+          <p class="subtitle">
+            Pule apenas para a <strong>esquerda</strong> ou <strong>direita</strong>.<br />
+            A plataforma de trás <strong>desaparece</strong> — e nas nuvens há tempo limite!
+          </p>
+          <div class="controls-hint">
+            <span><kbd>←</kbd> <kbd>→</kbd> ou <kbd>A</kbd> <kbd>D</kbd></span>
+            <span>ou toque nos botões abaixo</span>
+          </div>
+          <div class="card-buttons">
+            <button id="startBtn" class="btn primary">Começar a Pular</button>
+            <button id="openShopFromStartBtn" class="btn secondary">🎨 Personalizar Sapo</button>
+          </div>
+          <button id="menuMusicBtn" class="music-pill">🎵 Música Tema: Ligada (toque para ouvir)</button>
+        </div>
+      </div>
+
+      <!-- Game Over Overlay -->
+      <div id="gameOverOverlay" class="overlay hidden">
+        <div class="card">
+          <div id="newRecordBadge" class="new-record hidden">🏆 NOVO RECORDE!</div>
+          <h2>Splash! Caiu na água!</h2>
+          <div class="summary-grid">
+            <div class="summary-box">
+              <span class="summary-label">Plataformas</span>
+              <span id="finalScore" class="summary-num">0</span>
+            </div>
+            <div class="summary-box">
+              <span class="summary-label">Recorde</span>
+              <span id="finalRecord" class="summary-num">0</span>
+            </div>
+            <div class="summary-box">
+              <span class="summary-label">Tempo</span>
+              <span id="finalTime" class="summary-num">0.0s</span>
+            </div>
+            <div class="summary-box">
+              <span class="summary-label">Melhor Tempo</span>
+              <span id="finalBestTime" class="summary-num">0.0s</span>
+            </div>
+            <div class="summary-box span-2">
+              <span class="summary-label">Moedas ganhas</span>
+              <span id="runCoins" class="summary-num">+0 🪙</span>
+            </div>
+          </div>
+          <div class="card-buttons">
+            <button id="restartBtn" class="btn primary">Jogar de Novo</button>
+            <button id="openShopFromOverBtn" class="btn secondary">🎨 Personalizar Sapo</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Frog Shop Modal -->
+      <div id="shopOverlay" class="overlay hidden">
+        <div class="card shop-card">
+          <div class="shop-header">
+            <h2>Personalizar Sapo</h2>
+            <div class="shop-balance">🪙 <span id="shopCoinsValue">0</span></div>
+          </div>
+          <div class="shop-tabs">
+            <button id="tabColorsBtn" class="shop-tab active">🎨 Cores</button>
+            <button id="tabTypesBtn" class="shop-tab">🐸 Tipos</button>
+          </div>
+          <p id="shopSubtitle" class="shop-subtitle">Use suas moedinhas para desbloquear novas cores!</p>
+          <div id="skinGrid" class="skin-grid"></div>
+          <button id="closeShopBtn" class="btn primary">Voltar</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Touch / Click Controls -->
+    <footer class="controls-bar">
+      <button id="leftBtn" class="jump-btn left" aria-label="Pular para a esquerda">
+        <span class="arrow">⬅</span>
+        <span>ESQUERDA</span>
+      </button>
+      <button id="rightBtn" class="jump-btn right" aria-label="Pular para a direita">
+        <span>DIREITA</span>
+        <span class="arrow">➡</span>
+      </button>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
